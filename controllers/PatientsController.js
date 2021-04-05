@@ -26,6 +26,30 @@ router.get('/withSurg', async(req, res) => {
   res.status(200).json({ patients });
 });
 
+// todos os pacientes com cirurgias, mas sem nome dos médico
+router.get('/withSurgNoDoc', async(req, res) => {
+  const patients = await Patient.findAll({    
+    include: { 
+      model: Surgery, as: 'surgeries',
+      attributes: { exclude: ['doctor'] }
+    }
+  });
+  
+  res.status(200).json({ patients });
+});
+
+// receber nome do médico e trazer as cirurgias dele
+router.get('/byDoctor/:name', async(req, res) => {
+  const { name } = req.params;
+  console.log(name);
+  
+  const doctors = await Surgery.findAll({
+    where: { doctor: name },
+  });
+  
+  res.status(200).json(doctors);
+});
+
 // patients By plan_id
 router.get('/byPlan/:id', async(req, res) => {
   const { id } = req.params;
@@ -62,9 +86,15 @@ router.post('/', async(req, res) => {
   });
   if (!plan.length) return res.status(404).json({ message: 'Não existe plano com esse id.' });
   
-  const user = await Patient.create({fullname, plan_id});
+  const result = await Patient.create({fullname, plan_id});
   
-  res.status(200).json(user);
+  const user = {
+    patient_id: result.null,
+    fullname,
+    plan_id,
+  };
+  
+  res.status(204).json(user);
 });
 
 module.exports = router;
